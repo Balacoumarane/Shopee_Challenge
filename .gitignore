@@ -139,3 +139,4 @@ model/*
 *.csv
 *.pt
 .idea
+notebooks/log/*
