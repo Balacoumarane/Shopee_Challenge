@@ -138,5 +138,6 @@ model/*
 *.pth
 *.csv
 *.pt
+*.th
 .idea
 notebooks/log/*

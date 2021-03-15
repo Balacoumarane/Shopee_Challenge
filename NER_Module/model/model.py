@@ -1,5 +1,6 @@
 from typing import Tuple
 import os
+import time
 import pandas as pd
 import torch
 from torch import optim
@@ -37,7 +38,7 @@ def load_pretrained_model(num_labels: int, is_cuda: bool = False) -> Tuple[BertF
 class BertNerModel(object):
 
     def __init__(self, num_classes: int, i2w: dict = None, exp_id: str = None, random_state: int = None,
-                 device: str = None):
+                 prediction_only: bool = False, device: str = None):
         """
 
         Args:
@@ -46,9 +47,13 @@ class BertNerModel(object):
             exp_id:
             random_state:
             device:
+            prediction_only:
         """
         self.num_classes = num_classes
-        self.model, _ = load_pretrained_model(num_labels=num_classes, is_cuda=True)
+        if not prediction_only:
+            self.model, _ = load_pretrained_model(num_labels=num_classes, is_cuda=True)
+        else:
+            self.model, self.tokenizer = load_pretrained_model(num_labels=num_classes, is_cuda=True)
         if device is None:
             self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         else:
@@ -68,7 +73,6 @@ class BertNerModel(object):
             val_loader:
             model_dir:
             num_epochs:
-            optimizer:
             evaluate_every:
             early_stop:
             valid_criterion:
@@ -196,6 +200,8 @@ class BertNerModel(object):
         """
         # Evaluate on test
         logger.info('Prediction mode....')
+        logger.info('Total sentence to predict: {}'.format(len(test_loader)))
+        start = time.time()
         set_seed(self.random_state)
         self.model.eval()
         torch.set_grad_enabled(False)
@@ -217,6 +223,8 @@ class BertNerModel(object):
             df.to_csv(path, index=False)
             logger.info('Results saved in {}'.format(path))
         logger.info('Prediction completed!!!')
+        end = time.time()
+        logger.info('Total prediction time is:{}'.format(end-start))
         return df
 
     def save(self, path: str = None):
@@ -254,8 +262,7 @@ class BertNerModel(object):
         self.model.load_state_dict(state)
         if load_tokenizer:
             logger.info('Loading Tokenizer from indo-Bert')
-            tokenizer = BertTokenizer.from_pretrained('indobenchmark/indobert-base-p1')
-            return self, tokenizer
+            return self, self.tokenizer
         else:
             logger.info('Tokenizer not selected')
             return self

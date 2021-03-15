@@ -24,7 +24,6 @@ def forward_word_classification(model, batch_data, i2w, is_test=False, device='c
     label_batch = torch.LongTensor(label_batch)
 
     if device == "cuda":
-        logger.info('Device is set to cuda')
         subword_batch = subword_batch.cuda()
         mask_batch = mask_batch.cuda()
         token_type_batch = token_type_batch.cuda() if token_type_batch is not None else None
