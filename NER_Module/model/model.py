@@ -65,7 +65,7 @@ class BertNerModel(object):
         self.exp_id = exp_id
 
     def train(self, train_loader, val_loader, model_dir: str = None, num_epochs: int = 10,
-              evaluate_every: int = 2, early_stop: int = 3, valid_criterion: str = None, **kwargs):
+              evaluate_every: int = 2, early_stop: int = 5, valid_criterion: str = None, **kwargs):
         """
 
         Args:
@@ -125,14 +125,15 @@ class BertNerModel(object):
             # Calculate train metric
             metrics = ner_metrics_fn(list_hyp, list_label)
             logger.info("(Epoch {}) TRAIN LOSS:{:.4f} {} LR:{:.8f}".format((epoch + 1),
-                                                                     total_train_loss / (i + 1),
-                                                                     metrics_to_string(metrics), get_lr(optimizer)))
+                                                                           total_train_loss / (i + 1),
+                                                                           metrics_to_string(metrics),
+                                                                           get_lr(optimizer)))
 
             # Evaluate on validation
             # evaluate
             if ((epoch + 1) % evaluate_every) == 0:
-                val_loss, val_metrics = self.evaluate(data_loader=val_loader, is_test=False)
-
+                val_loss, val_metrics = self.evaluate(model=self.model, data_loader=val_loader, is_test=False)
+                logger.info('(Epoch {}) VAL_METRIC :{:.4f}'.format((epoch + 1), val_metrics[valid_criterion]))
                 # Early stopping
                 val_metric = val_metrics[valid_criterion]
                 if best_val_metric < val_metric:
@@ -144,22 +145,24 @@ class BertNerModel(object):
                         logger.info('No path to save the model')
                     count_stop = 0
                 else:
+                    logger.info('The best val is :{} and val_metric is {}'.format(best_val_metric, val_metric))
                     count_stop += 1
-                    logger.info("count stop:", count_stop)
+                    logger.info("count stop: {}".format(count_stop))
                     if count_stop == early_stop:
                         break
 
-    def evaluate(self, data_loader, is_test=False):
+    def evaluate(self, model, data_loader, is_test=False):
         """
 
         Args:
+            model:
             data_loader:
             is_test:
 
         Returns:
 
         """
-        self.model.eval()
+        model.eval()
         total_loss, total_correct, total_labels = 0, 0, 0
 
         list_hyp, list_label, list_seq = [], [], []
@@ -168,7 +171,7 @@ class BertNerModel(object):
         for i, batch_data in enumerate(pbar):
             batch_seq = batch_data[-1]
             # TODO: change device to cpu if needed
-            loss, batch_hyp, batch_label = forward_word_classification(self.model, batch_data[:-1], i2w=self.i2w,
+            loss, batch_hyp, batch_label = forward_word_classification(model, batch_data[:-1], i2w=self.i2w,
                                                                        device='cuda')
 
             # Calculate total loss
@@ -224,7 +227,7 @@ class BertNerModel(object):
             logger.info('Results saved in {}'.format(path))
         logger.info('Prediction completed!!!')
         end = time.time()
-        logger.info('Total prediction time is:{}'.format(end-start))
+        logger.info('Total prediction time is:{}'.format(end - start))
         return df
 
     def save(self, path: str = None):

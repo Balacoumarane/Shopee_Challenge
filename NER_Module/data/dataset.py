@@ -4,15 +4,20 @@ import torch.utils.data
 
 class NerGritDataset(torch.utils.data.Dataset):
     # Static constant variable
-    LABEL2INDEX = {'I-PERSON': 0, 'B-ORGANISATION': 1, 'I-ORGANISATION': 2, 'B-PLACE': 3, 'I-PLACE': 4, 'O': 5,
-                   'B-PERSON': 6}
-    INDEX2LABEL = {0: 'I-PERSON', 1: 'B-ORGANISATION', 2: 'I-ORGANISATION', 3: 'B-PLACE', 4: 'I-PLACE', 5: 'O',
-                   6: 'B-PERSON'}
-    NUM_LABELS = 7
+    # TODO: Change this to accept label and any IOB annotation format
+    # LABEL2INDEX = {'I-PERSON': 0, 'B-ORGANISATION': 1, 'I-ORGANISATION': 2, 'B-PLACE': 3, 'I-PLACE': 4, 'O': 5,
+    #                'B-PERSON': 6}
+    # INDEX2LABEL = {0: 'I-PERSON', 1: 'B-ORGANISATION', 2: 'I-ORGANISATION', 3: 'B-PLACE', 4: 'I-PLACE', 5: 'O',
+    #                6: 'B-PERSON'}
+    # NUM_LABELS = 7
+    # TODO: Uncomment to use shopee dataset
+    LABEL2INDEX = {'I-POI': 0, 'B-POI': 1, 'I-STREET': 2, 'B-STREET': 3, 'O': 4}
+    INDEX2LABEL = {0: 'I-POI', 1: 'B-POI', 2: 'I-STREET', 3: 'B-STREET', 4: 'O'}
+    NUM_LABELS = 5
 
     def load_dataset(self, path):
         # Read file
-        data = open(path, 'r').readlines()
+        data = open(path, 'r', encoding='utf-8').readlines()
 
         # Prepare buffer
         dataset = []
@@ -20,7 +25,8 @@ class NerGritDataset(torch.utils.data.Dataset):
         seq_label = []
         for line in data:
             if len(line.strip()) > 0:
-                token, label = line[:-1].split('\t')
+                # token, label = line[:-1].split('\t')
+                token, label = line[:-1].split(' ')
                 sentence.append(token)
                 seq_label.append(self.LABEL2INDEX[label])
             else:

@@ -1,140 +1,88 @@
-import random
-import numpy as np
+import os
 import pandas as pd
-import torch
-from torch import optim
-from tqdm import tqdm
 
-from transformers import BertConfig, BertTokenizer
-from nltk.tokenize import word_tokenize
-
-from .model import BertForWordClassification, forward_word_classification
-from .utils import ner_metrics_fn, get_lr, metrics_to_string, count_param
 from .data import NerGritDataset, NerDataLoader
+from .model import load_pretrained_model, BertNerModel
+from .utils import get_logger
+
+logger = get_logger(__name__)
 
 
-def execute(train_dataset_path, valid_dataset_path, test_dataset_path, predict=False, n_epochs=10):
+def execute_main(train_dataset_path: str = None, valid_dataset_path: str = None, test_dataset_path: str = None,
+                 model_dir: str = None,  model_filename: str = None, predict_only: bool = False, n_epochs: int = 10,
+                 exp_id: str = None, random_state: int = 33, device: str = 'cuda', validate_epoch: int = 1,
+                 early_stop: int = 3, criteria: str = 'F1', result_path: str = None, result_filename: str = 'result'
+                 ) -> pd.DataFrame:
     """
 
     Args:
         train_dataset_path:
         valid_dataset_path:
         test_dataset_path:
-        predict:
+        model_dir:
+        model_filename:
+        predict_only:
         n_epochs:
+        exp_id:
+        random_state:
+        device:
+        validate_epoch:
+        early_stop:
+        criteria:
+        result_path:
+        result_filename:
 
     Returns:
 
     """
-    # Load Tokenizer and Config
-    tokenizer = BertTokenizer.from_pretrained('indobenchmark/indobert-base-p1')
-    config = BertConfig.from_pretrained('indobenchmark/indobert-base-p1')
-    config.num_labels = NerGritDataset.NUM_LABELS
+    w2i, i2w = NerGritDataset.LABEL2INDEX, NerGritDataset.INDEX2LABEL
 
-    # Instantiate model
-    model = BertForWordClassification.from_pretrained('indobenchmark/indobert-base-p1', config=config)
-
-    # Load dataset
-    if not predict:
-        train_dataset = NerGritDataset(train_dataset_path, tokenizer, lowercase=True)
-        valid_dataset = NerGritDataset(valid_dataset_path, tokenizer, lowercase=True)
-        test_dataset = NerGritDataset(test_dataset_path, tokenizer, lowercase=True)
+    if not predict_only:
+        logger.info('Training mode....')
+        # load pretrained model
+        base_model, tokenizer = load_pretrained_model(num_labels=NerGritDataset.NUM_LABELS, is_cuda=True)
+        # load data
+        train_dataset = NerGritDataset(dataset_path=train_dataset_path, tokenizer=tokenizer, lowercase=True)
+        valid_dataset = NerGritDataset(dataset_path=valid_dataset_path, tokenizer=tokenizer, lowercase=True)
 
         train_loader = NerDataLoader(dataset=train_dataset, max_seq_len=512, batch_size=16, num_workers=16,
                                      shuffle=True)
         valid_loader = NerDataLoader(dataset=valid_dataset, max_seq_len=512, batch_size=16, num_workers=16,
                                      shuffle=False)
-        test_loader = NerDataLoader(dataset=test_dataset, max_seq_len=512, batch_size=16, num_workers=16,
-                                    shuffle=False)
+
+        # model initialisation
+        bert_model = BertNerModel(num_classes=NerGritDataset.NUM_LABELS, i2w=i2w, exp_id=exp_id,
+                                  random_state=random_state, device=device)
+        bert_model.train(train_loader=train_loader, val_loader=valid_loader, model_dir=model_dir, num_epochs=n_epochs,
+                         evaluate_every=validate_epoch, early_stop=early_stop, valid_criterion=criteria)
+        if test_dataset_path is not None:
+            test_dataset = NerGritDataset(dataset_path=test_dataset_path, tokenizer=tokenizer, lowercase=True)
+            test_loader = NerDataLoader(dataset=test_dataset, max_seq_len=512, batch_size=16, num_workers=16,
+                                        shuffle=False)
+            result_df = bert_model.predict(test_loader=test_loader, save_path=result_path, filename=result_filename)
+            return result_df
+        else:
+            logger.info('Test dataset is not passed, so using validation dataset')
+            result_df = bert_model.predict(test_loader=valid_loader, save_path=result_path, filename=result_filename)
+            return result_df
     else:
-        test_dataset = NerGritDataset(test_dataset_path, tokenizer, lowercase=True)
-        test_loader = NerDataLoader(dataset=test_dataset, max_seq_len=512, batch_size=16, num_workers=16,
-                                    shuffle=False)
+        # model initialisation
+        predict_model = BertNerModel(num_classes=NerGritDataset.NUM_LABELS, i2w=i2w, exp_id=None,
+                                     prediction_only=predict_only, random_state=random_state, device=device)
+        # model_path
+        model_folder = model_dir
+        filename = model_filename
+        model_path = os.path.join(model_folder, filename)
+        # load custom model
+        bert_predict_model, bert_predict_tokenizer = predict_model.load_modellocal(path=model_path, load_tokenizer=True)
 
-    w2i, i2w = NerGritDataset.LABEL2INDEX, NerGritDataset.INDEX2LABEL
-
-    optimizer = optim.Adam(model.parameters(), lr=2e-5)
-    model = model.cuda()
-
-    # Train
-    if not predict:
-        n_epochs = n_epochs
-        for epoch in range(n_epochs):
-            model.train()
-            torch.set_grad_enabled(True)
-
-            total_train_loss = 0
-            list_hyp, list_label = [], []
-
-            train_pbar = tqdm(train_loader, leave=True, total=len(train_loader))
-            for i, batch_data in enumerate(train_pbar):
-                # Forward model
-                loss, batch_hyp, batch_label = forward_word_classification(model, batch_data[:-1], i2w=i2w,
-                                                                           device='cuda')
-
-                # Update model
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-                tr_loss = loss.item()
-                total_train_loss = total_train_loss + tr_loss
-
-                # Calculate metrics
-                list_hyp += batch_hyp
-                list_label += batch_label
-
-                train_pbar.set_description("(Epoch {}) TRAIN LOSS:{:.4f} LR:{:.8f}".format((epoch + 1),
-                                                                                           total_train_loss / (i + 1),
-                                                                                           get_lr(optimizer)))
-
-            # Calculate train metric
-            metrics = ner_metrics_fn(list_hyp, list_label)
-            print("(Epoch {}) TRAIN LOSS:{:.4f} {} LR:{:.8f}".format((epoch + 1),
-                                                                     total_train_loss / (i + 1),
-                                                                     metrics_to_string(metrics),
-                                                                     get_lr(optimizer)))
-
-            # Evaluate on validation
-            model.eval()
-            torch.set_grad_enabled(False)
-
-            total_loss, total_correct, total_labels = 0, 0, 0
-            list_hyp, list_label = [], []
-
-            pbar = tqdm(valid_loader, leave=True, total=len(valid_loader))
-            for i, batch_data in enumerate(pbar):
-                loss, batch_hyp, batch_label = forward_word_classification(model, batch_data[:-1], i2w=i2w,
-                                                                           device='cuda')
-
-                # Calculate total loss
-                valid_loss = loss.item()
-                total_loss = total_loss + valid_loss
-
-                # Calculate evaluation metrics
-                list_hyp += batch_hyp
-                list_label += batch_label
-                metrics = ner_metrics_fn(list_hyp, list_label)
-
-                pbar.set_description("VALID LOSS:{:.4f} {}".format(total_loss / (i + 1), metrics_to_string(metrics)))
-
-            metrics = ner_metrics_fn(list_hyp, list_label)
-            print("(Epoch {}) VALID LOSS:{:.4f} {}".format((epoch + 1),
-                                                           total_loss / (i + 1), metrics_to_string(metrics)))
-    else:
-        # Evaluate on test
-        model.eval()
-        torch.set_grad_enabled(False)
-
-        total_loss, total_correct, total_labels = 0, 0, 0
-        list_hyp, list_label = [], []
-
-        pbar = tqdm(test_loader, leave=True, total=len(test_loader))
-        for i, batch_data in enumerate(pbar):
-            _, batch_hyp, _ = forward_word_classification(model, batch_data[:-1], i2w=i2w, device='cuda')
-            list_hyp += batch_hyp
-
-        # Save prediction
-        df = pd.DataFrame({'label': list_hyp}).reset_index()
-        df.to_csv('pred.txt', index=False)
-        print(df)
+        # load prediction_data
+        assert isinstance(test_dataset_path, str)
+        predict_dataset = NerGritDataset(dataset_path=test_dataset_path, tokenizer=bert_predict_tokenizer,
+                                         lowercase=True)
+        # load data trainer
+        predict_loader = NerDataLoader(dataset=predict_dataset, max_seq_len=512, batch_size=16, num_workers=16,
+                                       shuffle=False)
+        predict_df = bert_predict_model.predict(test_loader=predict_loader, save_path=result_path,
+                                                filename=result_filename)
+        return predict_df

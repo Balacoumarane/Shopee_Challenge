@@ -1,0 +1,117 @@
+﻿para B-STREET
+hill I-STREET
+5a I-STREET
+
+paledang O
+solusi B-POI
+alami I-POI
+leng B-STREET
+kecil I-STREET
+75 O
+40261 O
+lengkong O
+
+cis B-STREET
+baru I-STREET
+no O
+16 O
+asr O
+mahasiswa O
+banuhampu O
+
+smk B-POI
+sunan I-POI
+kali I-POI
+
+gep O
+pen O
+sam O
+njeritz O
+kertan O
+sela O
+
+terminal B-POI
+jakabaring I-POI
+jln B-STREET
+pangeran I-STREET
+ratu I-STREET
+
+mangga B-POI
+dua I-POI
+square I-POI
+mall O
+lt O
+ug O
+blok O
+b O
+no O
+3b O
+jln B-STREET
+gunung I-STREET
+sahari I-STREET
+raya O
+no O
+1 O
+
+pang B-STREET
+men I-STREET
+tanah O
+grogot O
+
+gusti B-STREET
+perm I-STREET
+2 I-STREET
+19 O
+rt O
+1 O
+7 O
+penjaringan O
+
+smk B-POI
+bhinneka I-POI
+karya I-POI
+solo I-POI
+let B-STREET
+supr I-STREET
+sumber O
+banjarsari O
+
+terminal B-POI
+jakabaring I-POI
+bis O
+man O
+cintya O
+pampangan O
+warna O
+kuning O
+dekat O
+pintu O
+keluar O
+terminal O
+
+ades B-POI
+alfindo I-POI
+putras I-POI
+pt I-POI
+pilar B-STREET
+2 I-STREET
+kedoya O
+selatan O
+
+jamin B-STREET
+gint I-STREET
+699 O
+titi O
+rantai O
+medan O
+baru O
+
+mel B-STREET
+xi I-STREET
+10 O
+jatirahayu O
+rt O
+2 O
+20 O
+pondok O
+melati O

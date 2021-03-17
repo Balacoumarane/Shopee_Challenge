@@ -141,3 +141,4 @@ model/*
 *.th
 .idea
 notebooks/log/*
+model_1/*
