@@ -4,7 +4,7 @@ import torch.utils.data
 
 class NerGritDataset(torch.utils.data.Dataset):
     # Static constant variable
-    # TODO: Change this to accept label and any IOB annotation format
+    # # TODO: Change this to accept label and any IOB annotation format
     # LABEL2INDEX = {'I-PERSON': 0, 'B-ORGANISATION': 1, 'I-ORGANISATION': 2, 'B-PLACE': 3, 'I-PLACE': 4, 'O': 5,
     #                'B-PERSON': 6}
     # INDEX2LABEL = {0: 'I-PERSON', 1: 'B-ORGANISATION', 2: 'I-ORGANISATION', 3: 'B-PLACE', 4: 'I-PLACE', 5: 'O',

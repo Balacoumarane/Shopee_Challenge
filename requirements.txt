@@ -3,9 +3,9 @@ pandas==1.2.3
 pytest==6.2.2
 torch==1.7.0
 scikit-learn==0.24.1
-# torchvision==0.8.0
-# torchaudio==0.7.0
-# torchtext==0.8.0
+torchvision==0.8.0
+torchaudio==0.7.0
+torchtext==0.8.0
 matplotlib==3.3.4
 transformers==4.3.3
 seqeval==1.2.2

@@ -3,7 +3,7 @@ import pandas as pd
 
 from .data import NerGritDataset, NerDataLoader
 from .model import load_pretrained_model, BertNerModel
-from .utils import get_logger
+from .utils import get_logger, convert_shopee_format
 
 logger = get_logger(__name__)
 
@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 def execute_main(train_dataset_path: str = None, valid_dataset_path: str = None, test_dataset_path: str = None,
                  model_dir: str = None,  model_filename: str = None, predict_only: bool = False, n_epochs: int = 10,
                  exp_id: str = None, random_state: int = 33, device: str = 'cuda', validate_epoch: int = 1,
-                 early_stop: int = 3, criteria: str = 'F1', result_path: str = None, result_filename: str = 'result'
-                 ) -> pd.DataFrame:
+                 early_stop: int = 3, criteria: str = 'F1', result_path: str = None, result_filename: str = 'result',
+                 convert_shopee: bool = False, shopee_prediction_file: str = None) -> pd.DataFrame:
     """
 
     Args:
@@ -31,6 +31,8 @@ def execute_main(train_dataset_path: str = None, valid_dataset_path: str = None,
         criteria:
         result_path:
         result_filename:
+        convert_shopee:
+        shopee_prediction_file:
 
     Returns:
 
@@ -83,6 +85,17 @@ def execute_main(train_dataset_path: str = None, valid_dataset_path: str = None,
         # load data trainer
         predict_loader = NerDataLoader(dataset=predict_dataset, max_seq_len=512, batch_size=16, num_workers=16,
                                        shuffle=False)
-        predict_df = bert_predict_model.predict(test_loader=predict_loader, save_path=result_path,
-                                                filename=result_filename)
-        return predict_df
+
+        if not convert_shopee:
+            predict_df = bert_predict_model.predict(test_loader=predict_loader, save_path=result_path,
+                                                    filename=result_filename)
+            logger.info('Results are not converted into shopee format')
+            return predict_df
+        else:
+            predict_df = bert_predict_model.predict(test_loader=predict_loader, save_path=None,
+                                                    filename=None)
+            shopee_input = pd.read_csv(shopee_prediction_file)
+            convert_shopee_format(input_df=shopee_input, address_col='address', output_df=predict_df,
+                                  filename=result_filename, save_path=result_path)
+            logger.info('Saving results in shopee format...')
+            return predict_df

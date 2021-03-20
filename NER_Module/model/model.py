@@ -129,6 +129,12 @@ class BertNerModel(object):
                                                                            metrics_to_string(metrics),
                                                                            get_lr(optimizer)))
 
+            # save model
+            if model_dir is not None:
+                logger.info("Saving model....")
+                self.save(path=model_dir)
+            else:
+                logger.info('No path to save the model')
             # Evaluate on validation
             # evaluate
             if ((epoch + 1) % evaluate_every) == 0:
@@ -138,11 +144,6 @@ class BertNerModel(object):
                 val_metric = val_metrics[valid_criterion]
                 if best_val_metric < val_metric:
                     best_val_metric = val_metric
-                    # save model
-                    if model_dir is not None:
-                        self.save(path=model_dir)
-                    else:
-                        logger.info('No path to save the model')
                     count_stop = 0
                 else:
                     logger.info('The best val is :{} and val_metric is {}'.format(best_val_metric, val_metric))
@@ -163,6 +164,7 @@ class BertNerModel(object):
 
         """
         model.eval()
+        torch.set_grad_enabled(False)
         total_loss, total_correct, total_labels = 0, 0, 0
 
         list_hyp, list_label, list_seq = [], [], []

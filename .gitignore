@@ -131,6 +131,10 @@ dmypy.json
 # data
 data/*
 !data/.gitkeep
+data_1/*
+data_2/*
+data_3/*
+data_org/*
 log/*
 !log/.gitkeep
 model/*
