@@ -1,0 +1,89 @@
+﻿ria B-POI
+tapin I-POI
+pulau O
+laut O
+utara O
+
+jl B-STREET
+by I-STREET
+pass I-STREET
+gulai B-POI
+bancah I-POI
+rt O
+06 O
+rw O
+02 O
+(di O
+belakang O
+balqis O
+mart) O
+
+gangang O
+alhidayai O
+rt O
+o6 O
+rw O
+09 O
+jatikramat O
+jati O
+asih O
+bekasi O
+dibelakang O
+apotik B-POI
+roxy I-POI
+jatikrama O
+
+suy B-STREET
+kertosari O
+temanggung O
+
+jend B-STREET
+sudi I-STREET
+no O
+40 O
+pt B-POI
+nayora I-POI
+prabumulih O
+timur O
+
+pras B-STREET
+utara I-STREET
+7 I-STREET
+b I-STREET
+no O
+28 O
+kaos B-POI
+sema I-POI
+distro I-POI
+semoc I-POI
+
+pan B-STREET
+vii I-STREET
+44 O
+kramat O
+pela O
+rt O
+2 O
+rw O
+2 O
+kebayoran O
+baru O
+
+jalan B-STREET
+swa I-STREET
+barat I-STREET
+12 I-STREET
+
+pon B-STREET
+kel I-STREET
+sela I-STREET
+i I-STREET
+no O
+2 O
+rt O
+3 O
+5 O
+pondok O
+kelapa O
+duren O
+sawit O
